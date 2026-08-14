@@ -1,8 +1,10 @@
-# Claude Desktop Windows Launch Fix
+# Fix Claude Desktop 0x80070020 on Windows
 
-I kept running into this after Claude Desktop updated: the app would not open, and Windows claimed that another program was using a file.
+This PowerShell script is for a specific Claude Desktop launch failure on Windows: after an MSIX update, the app will not open and Windows says, “This file is currently used by another program.” `Start-Process "claude:"` may report the same file-in-use error.
 
-![Claude Desktop file-in-use error](assets/claude-file-in-use.png)
+![Claude Desktop 0x80070020 error saying this file is currently used by another program](assets/claude-file-in-use.png)
+
+For the failure this script targets, Event Viewer shows AppModel-Runtime events `208`/`215` with error `0x80070020` (`ERROR_SHARING_VIOLATION`) while Windows tries to create the Desktop AppX container.
 
 In my case, the useful clue was a group of orphaned `app-server-broker.mjs` processes. Their parent processes were gone, but the brokers were still alive. Stopping Claude's packaged service and removing only those orphaned brokers allowed the AppX container to start again.
 
