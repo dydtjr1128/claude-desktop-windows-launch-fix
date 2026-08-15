@@ -204,7 +204,11 @@ if ($null -ne $service -and $service.Status -ne 'Stopped') {
 
 Write-Host 'Launching Claude...'
 try {
-    Start-Process 'claude:' -ErrorAction Stop
+    # Let the Windows shell handle protocol activation so Claude does not
+    # inherit this PowerShell window's console handles. A direct launch can
+    # stream Electron logs here and close Claude when the terminal exits.
+    $explorerPath = Join-Path $env:WINDIR 'explorer.exe'
+    Start-Process -FilePath $explorerPath -ArgumentList 'claude:' -ErrorAction Stop
 }
 catch {
     throw "Claude launch is still blocked: $($_.Exception.Message)"

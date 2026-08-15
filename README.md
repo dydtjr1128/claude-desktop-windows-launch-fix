@@ -32,7 +32,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Fix-ClaudeLaunch.ps1
 - Closes processes running from the Claude MSIX package.
 - Finds `app-server-broker.mjs` Node processes whose parent is gone.
 - Leaves active brokers and unrelated Node processes alone.
-- Waits for the AppX container to settle, then launches Claude.
+- Waits for the AppX container to settle, then asks Windows Explorer to launch Claude independently of the PowerShell window.
 
 The script is intentionally narrow. It is meant for the launch failure that produces AppModel-Runtime events `208`/`215` with error `0x80070020`. If no orphaned broker is found, the problem may have a different cause.
 
