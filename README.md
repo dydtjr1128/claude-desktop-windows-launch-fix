@@ -29,11 +29,15 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Fix-ClaudeLaunch.ps1
 ## What it does
 
 - Stops `CoworkVMService` without changing its startup type.
-- Closes processes running from the Claude MSIX package.
+- Closes the Claude MSIX process tree from children to parents.
 - Finds `app-server-broker.mjs` Node processes whose parent is gone.
 - Leaves active brokers and unrelated Node processes alone.
-- Waits for the AppX container to settle, then launches Claude.
+- Repeats cleanup until Claude processes and services remain stopped.
+- Waits for the Claude AppX container to unmount, then launches Claude through Windows Explorer.
+- Uses AppModel-Runtime events to distinguish a successful launch from error `0x80070020`.
 
 The script is intentionally narrow. It is meant for the launch failure that produces AppModel-Runtime events `208`/`215` with error `0x80070020`. If no orphaned broker is found, the problem may have a different cause.
+
+If an update leaves the Claude AppX container mounted after every process has stopped, Windows cannot safely release it from this script. The script reports that state without launching Claude. Sign out of Windows and sign back in, or restart Windows, then try Claude again.
 
 This is an unofficial workaround and is not affiliated with Anthropic.
