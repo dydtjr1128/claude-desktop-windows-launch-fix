@@ -6,7 +6,7 @@ This PowerShell script is for a specific Claude Desktop launch failure on Window
 
 For the failure this script targets, Event Viewer shows AppModel-Runtime events `208`/`215` with error `0x80070020` (`ERROR_SHARING_VIOLATION`) while Windows tries to create the Desktop AppX container.
 
-In my case, the useful clue was a group of orphaned `app-server-broker.mjs` processes. Their parent processes were gone, but the brokers were still alive. Stopping Claude's packaged service and removing only those orphaned brokers allowed the AppX container to start again.
+In my case, the useful clue was a group of orphaned `app-server-broker.mjs` processes. A later Claude update exposed a second form of the same problem: non-packaged child processes were still assigned to an older, per-user Claude AppX Job after their Claude parent had exited. As long as those Job members remained alive, Windows kept the old container mounted and rejected the new version with `0x80070020`.
 
 This script automates that cleanup. It does not uninstall Claude, reset the app, or delete user data.
 
@@ -31,10 +31,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Fix-ClaudeLaunch.ps1
 - Stops `CoworkVMService` without changing its startup type.
 - Closes the Claude MSIX process tree from children to parents.
 - Finds `app-server-broker.mjs` Node processes whose parent is gone.
-- Leaves active brokers and unrelated Node processes alone.
-- Repeats cleanup until Claude processes and services remain stopped.
-- Waits for the Claude AppX container to unmount, then launches Claude through Windows Explorer.
-- Uses AppModel-Runtime events to distinguish a successful launch from error `0x80070020`.
+- Finds remaining processes in the exact Claude package/current-user AppX Job, including non-packaged descendants, and stops them.
+- Leaves processes outside that package/user Job alone.
+- Repeats cleanup until Claude processes, Job members, and services remain stopped.
+- Waits up to 10 seconds for the Claude AppX container to remain unmounted.
+- Launches Claude through Windows Explorer in the same user session, then requires its process to remain alive before reporting success.
+
+Tools or temporary servers launched from Claude can inherit its AppX Job. If they are still members of a stale Claude Job, the script closes them as part of the repair. It does not terminate similarly named processes outside the exact Claude package/current-user Job.
 
 The script is intentionally narrow. It is meant for the launch failure that produces AppModel-Runtime events `208`/`215` with error `0x80070020`. If no orphaned broker is found, the problem may have a different cause.
 
