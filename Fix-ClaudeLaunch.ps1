@@ -196,10 +196,13 @@ function Invoke-ClaudeCleanupPass {
 
     $allProcesses = @(Get-CimInstance Win32_Process)
     $packageProcesses = @(Get-ClaudePackageProcesses -Processes $allProcesses)
+    $rootProcessIds = @(
+        $packageProcesses | ForEach-Object { [uint32]$_.ProcessId }
+    )
     $processTree = @(
         Get-ClaudeProcessTree `
             -Processes $allProcesses `
-            -RootProcessIds @($packageProcesses.ProcessId)
+            -RootProcessIds $rootProcessIds
     )
 
     # Stop descendants before their packaged parent so external helpers cannot
